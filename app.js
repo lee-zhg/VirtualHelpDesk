@@ -18,21 +18,37 @@
 
 var express = require('express'); // app server
 var bodyParser = require('body-parser'); // parser for post requests
-var Conversation = require('watson-developer-cloud/conversation/v1'); // watson sdk
+//var Conversation = require('watson-developer-cloud/conversation/v1'); // watson sdk
 var request = require('request');
 var req = require('request');
 var dateTime = require('node-datetime');
 
-// required for Deploy to IBM Cloud support
-require('metrics-tracker-client').track();
+var vcapServices = require('vcap_services');
+var conversationCredentials = vcapServices.getCredentials('conversation');
+var watson = require('watson-developer-cloud'); // watson sdk
 
 var app = express();
 var description = '';
+
+// for automatically deploying to IBM Cloud
+const fs = require('fs'); // file system for loading JSON;
+var Discovery = require('watson-developer-cloud/discovery/v1');
+const WatsonDiscoverySetup = require('./lib/watson-discovery-setup');
+const WatsonConversationSetup = require('./lib/watson-conversation-setup');
+const DISCOVERY_ACTION = 'rnr'; // Replaced RnR w/ Discovery but Assistant action is still 'rnr'.
+const DISCOVERY_DOCS = [
+  './training/icd_001.json',
+  './training/icd_002.json',
+  './training/icd_003.json'
+];
+const DEFAULT_NAME_C = 'Conversation-ICD';
+const DEFAULT_NAME_D = 'Discovery-ICD';
 
 // Bootstrap application settings
 app.use(express.static('./public')); // load UI from public folder
 app.use(bodyParser.json());
 
+/*
 // Create the Conversation service wrapper
 var conversation = new Conversation({
   // If unspecified here, the CONVERSATION_USERNAME and CONVERSATION_PASSWORD env properties will be checked
@@ -43,7 +59,49 @@ var conversation = new Conversation({
   version_date: '2016-10-21',
   version: 'v1'
 });
+*/
 
+const conversation = new watson.AssistantV1({ 
+  version: '2018-02-16'
+});
+
+// for automatically deploying to IBM Cloud
+let workspaceID; // workspaceID will be set when the workspace is created or validated.
+const conversationSetup = new WatsonConversationSetup(conversation);
+const workspaceJson = JSON.parse(fs.readFileSync('./training/ITSM_workspace.json'));
+const conversationSetupParams = { default_name: DEFAULT_NAME_C, workspace_json: workspaceJson };
+conversationSetup.setupConversationWorkspace(conversationSetupParams, (err, data) => {
+  if (err) {
+    handleSetupError(err);
+  } else {
+    console.log('Watson Assistant is ready!');
+    workspaceID = data;
+  }
+});
+
+// Create the Discovery service wrapper
+var discovery = new Discovery({
+  // if left unspecified here, the SDK will fall back to the DISCOVERY_USERNAME and DISCOVERY_PASSWORD
+  // environment properties, and then Bluemix's VCAP_SERVICES environment property
+  // username: '62bf8db7-61b5-4d05-b69b-dba27bad4b22',
+  // password: 'ObnwQ0LKlICr'
+  // url: 'INSERT YOUR URL FOR THE SERVICE HERE'
+  version_date: '2017-09-01',
+  url: 'https://gateway.watsonplatform.net/discovery/api/'
+});
+
+// for automatically deploying to IBM Cloud
+let discoveryParams; // discoveryParams will be set after Discovery is validated and setup.
+const discoverySetup = new WatsonDiscoverySetup(discovery);
+const discoverySetupParams = { default_name: DEFAULT_NAME_D, documents: DISCOVERY_DOCS };
+discoverySetup.setupDiscovery(discoverySetupParams, (err, data) => {
+  if (err) {
+    handleSetupError(err);
+  } else {
+    console.log('Discovery is ready!');
+    discoveryParams = data;
+  }
+});
 
 // Endpoint to be call from the client side
 app.post('/api/message', function (req, res) {
@@ -136,10 +194,18 @@ app.post('/api/message', function (req, res) {
 
         callMaximo(description, data.context.severity).then(function (body) {
 
+          // For old ICD/Maximo release
+          /*
           var ticketidindex2 = body.search('</TICKETID>');
           var ticketidindex1 = body.search('<TICKETID>');
           var ticketid = body.substring(ticketidindex2, ticketidindex1 + 10);
+          */
 
+          // For new ICD/Maximo release
+          var obj = JSON.parse(body);
+          var element = process.env.MAXIMO_PREFIX + ":ticketid";
+          var ticketid = obj[element];
+          
           console.log('##############################222\n');
           console.log("TICKETID=" + ticketid + "\n");
           console.log(body + '\n');
@@ -312,7 +378,8 @@ function callMaximo(description, severity) {
     </max:CreateMXSR>'
     */
 
-    // Calling ICD/Maximo REST API to open ticket
+    // Calling ICD/Maximo REST API to open ticket (for old ICD/Maximo release)
+    /*
     var maximo_rest_body = '<?xml version="1.0" encoding="UTF-8"?> \
         <max:CreateMXSR \
             xmlns:max="http://www.ibm.com/maximo" creationDateTime="' + formatted_now + '" > \
@@ -328,8 +395,19 @@ function callMaximo(description, severity) {
                 </max:SR> \
             </max:MXSRSet> \
         </max:CreateMXSR>'
+    */
 
-    console.log(maximo_rest_body);
+    // Calling ICD/Maximo REST API to open ticket (for new ICD/Maximo release)
+    var maximo_rest_body = '{ \
+      "' + process.env.MAXIMO_PREFIX + ':description":"' + description + '", \
+      "' + process.env.MAXIMO_PREFIX + ':affectedperson":"' + process.env.MAXIMO_PERSONID + '", \
+      "' + process.env.MAXIMO_PREFIX + ':status":"NEW"' + ', \
+      "' + process.env.MAXIMO_PREFIX + ':reportedby":"' + process.env.MAXIMO_PERSONID + '", \
+      "' + process.env.MAXIMO_PREFIX + ':classstructureid":"' + process.env.MAXIMO_CLASSSTRUCTUREID + '", \
+      "' + process.env.MAXIMO_PREFIX + ':reportedpriority":' + severity + ' \
+      }'
+
+      console.log(maximo_rest_body);
 
     try {
 
@@ -340,7 +418,8 @@ function callMaximo(description, severity) {
           'Authorization': process.env.MAXIMO_AUTH,
           // For Native Maximo Authentication
           'MAXAUTH': process.env.MAXIMO_AUTH,
-          'Content-Type': process.env.MAXIMO_CONTEXT_TYPE,
+          'CONTENT-TYPE': process.env.MAXIMO_CONTEXT_TYPE,
+          'PROPERTIES':'*'
         },
 
         url: process.env.MAXIMO_REST_URL,
