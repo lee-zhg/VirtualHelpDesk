@@ -190,97 +190,51 @@ Login to your trail ICD SaaS system and verify it's working.
 
 ### Configuring the Watson Assistant service environment
 
-1. Copy the `.env.example` file and create a new `.env` file.
+1. Copy the `.env.example` file and create a new `.env` file in the root directory of repository download.
 
-1. In IBM Cloud with the Cloud Foundry command-line tool, create a service key for the Assistant service in the format `cf create-service-key <service_instance> <service_key>`. For example:
-
-    ```bash
-    cf create-service-key my-conversation-service myKey
-    ```
-
-1. Retrieve the credentials from the service key of the Assistant service using the command `cf service-key <service_instance> <service_key>`. For example:
+1. Populate the following variables in the `.env` file based on your Assistant instance.
 
     ```bash
-    cf service-key my-conversation-service myKey
+    # Watson Assistant
+    WORKSPACE_ID=
+    ASSISTANT_URL=
+    ASSISTANT_IAM_APIKEY=
+
     ```
+    
+    To find Assistant URL and APIKEY,
 
-   The output from this command is a JSON object, as in this example:
-
-    ```JSON
-    {
-      "password": "87iT7aqpvU7l",
-      "url": "https://gateway.watsonplatform.net/conversation/api",
-      "username": "ca2905e6-7b5d-4408-9192-e4d54d83e604"
-    }
-    ```
-
-1. Copy and paste  the `password` and `username` values (without quotation marks) from the JSON into the `CONVERSATION_PASSWORD` and `CONVERSATION_USERNAME` variables in the `.env` file. For example:
-
-    ```bash
-    CONVERSATION_USERNAME=ca2905e6-7b5d-4408-9192-e4d54d83e604
-    CONVERSATION_PASSWORD=87iT7aqpvU7l
-    ```
-
-1. In the IBM Cloud console, open the Assistant service instance where you imported the workspace.
-
-1. Click the menu icon in the upper-right corner of the workspace tile, and then select **View details**.
-
-    ![Screen capture of workspace tile menu](doc/source/images/workspace_details.png)
-
-1. Click the ![Copy](doc/source/images/copy_icon.png) icon to copy the workspace ID to the clipboard.
-
-1. On the local system, paste the workspace ID into the WORKSPACE_ID variable in the `.env` file. 
-
-1. Save the file.
+    * Find and select your Assistant instance 
+    * Navigate to the `Service credentials` tab.
+    * Expand the `View credentials` under Actions in the right pane.
 
 ### Configuring the Discovery service environment
 
-1. With the Cloud Foundry command-line tool, create a service key for the Discovery service in the format `cf create-service-key <service_instance> <service_key>`. For example:
+1. Populate the following variables in the `.env` file based on your Assistant instance.
 
     ```bash
-    cf create-service-key my-discovery-service myKey
-    ```
-
-1. Retrieve the credentials from the service key of the Assistant service using the command `cf service-key <service_instance> <service_key>`. For example:
-
-    ```bash
-    cf service-key my-discovery-service myKey
-    ```
-
-   The output from this command is a JSON object, as in this example:
-
-    ```JSON
-    {
-        "password": "E8CCHs37pUwj",
-        "url": "https://gateway.watsonplatform.net/discovery/api",
-        "username": "07629c30-a460-436d-ae54-97a3b6e71902"
-    }
-    ```
-
-1. Copy and paste  the `password`, `username` and `username` values (without quotation marks) from the JSON into the `.env` file. For example:
+    # Watson Discovery
+    DISCOVERY_URL=https://gateway.watsonplatform.net/discovery/api
+    DISCOVERY_ENVIRONMENT_ID=4e6058d9-73b7-406e-95ce-145afab07f00
+    DISCOVERY_COLLECTION_ID=f0f9541d-7583-4b87-b491-5f40a317de22
+    DISCOVERY_IAM_APIKEY=xpm6QSsOTWwlmHF89sVyqjiuNmHQHHlUnJXNx0G9X6PB
 
     ```
-    DISCOVERY_USERNAME=07629c30-a460-436d-ae54-97a3b6e71902
-    DISCOVERY_PASSWORD=E8CCHs37pUwj
-    DISCOVERY_URL=https://gateway.watsonplatform.net/discovery/api/v1
-    ```
+    
+    To find Assistant URL and APIKEY,
 
-1. In the IBM Cloud console, open your Discovery service instance.
+    * Find and select your Discovery instance 
+    * Navigate to the `Service credentials` tab.
+    * Expand the `View credentials` under Actions in the right pane.
 
-1. Open the Collection in your Discovery service.
+    To find DISCOVERY_ENVIRONMENT_ID and DISCOVERY_IAM_APIKEY,
 
-1. Locate the `collection info` section, 
-
-    ![Screen capture of workspace tile menu](doc/source/images/discovery_view_collection.png)
-
-1. click `Use this collection in API` link to display the collection information.
+    * Navigate to `Manage` tab of your Discovery instance.
+    * Click `Launch tool`.
+    * Click your collection.
+    * Click the `View API details` icon next to the trash can icon.
 
     ![Screen capture of workspace tile menu](doc/source/images/discovery_collection_detail.png)
-
-1. Copy and paste Collection ID and Environment ID to the corresponding variable in the `.env` file. 
-
-1. Save the file.
-
 
 ### Configuring the Maximo/ICD environment
 
@@ -313,6 +267,8 @@ To create new Object Structure MYSR,
 1. Still in the Object Structure MYSR record, navigate to `More Actions` (or `Select Action`) -> `Exclude/Include Fields`.
 
 1. Locate attribute `AFFECTEDPERSON` and unselect the `Exclude?` checkbox.
+
+1. Click `OK`.
 
 
 #### Configuring OSLC Resources in Maximo/ICD system
