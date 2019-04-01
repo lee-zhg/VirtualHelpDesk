@@ -48,8 +48,11 @@ And continue in section
 Node.js application must be redeployed after it is configured to connect to Maximo/ICD system. The instruction is provided in section
 * Deploying to Bluemix
 
+OR
 
-## Before you begin
+## Run locally
+
+### Before you begin
 
 * Create an IBM Cloud account -- [Sign up](https://console.bluemix.net/registration/) for IBM Cloud, or use an existing account. Your account must have available space for at least one app and two Watson services.
 
@@ -57,79 +60,66 @@ Node.js application must be redeployed after it is configured to connect to Maxi
     * The [Node.js](https://nodejs.org/#download) runtime, including the [NPM](https://www.npmjs.com) package manager.
     * The [Cloud Foundry](https://github.com/cloudfoundry/cli#downloads) CLI.
 
-## Setting up Assistant service
+### Clone the repo
+
+Use GitHub to clone the repository locally. In a terminal, run:
+
+   ```bash
+   git clone https://github.com/ibm/virtualhelpdesk
+   ```
+
+### Setting up Assistant service
 
 The Watson Assistant service is used to provide underline infrastructure for the virtual agent in this code pattern.
 
-### Creating an Assistant service
+#### Creating an Assistant service
 
 Watson Assistant service is to be setup to simulate help desk level 1 activities. For topics that the virtual agent has been trained, it can help end users interactively. For subjects that the virtual agent does not understand, it searches the knowledge base through Discovery service, collects information from end user and creates a new ticket in back-office ticketing system, for example Maximo/ICD, if necessary.
 
-Slots are configured in the Assistant service to collect additional information from end users.
+Create an instance of [**Watson Assistant**](https://cloud.ibm.com/catalog/services/conversation).
 
-1. At the command line, go to the local project directory (`vaticketbot`).
+#### Importing the Assistant workspace
 
-1. Connect to IBM Cloud with the Cloud Foundry command-line tool. For more information, see the [IBM Cloud documentation](https://console.bluemix.net/docs/cli/reference/cfcommands/index.html).
-    ```bash
-    cf login
-    ```
+1. Login to [IBM Cloud console](https://cloud.ibm.com).
 
-1. Create an instance of the Assistant service in IBM Cloud. For example:
-
-    ```bash
-    cf create-service conversation free my-conversation-service
-    ```
-
-### Importing the Assistant workspace
-
-1. In your browser, navigate to the [IBM Cloud console](https://console.ng.bluemix.net/dashboard/services).
-
-1. From the **All Items** tab, click the newly created Assistant service in the `Cloud Foundry Services` list.
+1. Location and open the newly created Assistant service under the `Services` of the `Resource summary` in the dashboard.
 
     ![Screen capture of Services list](doc/source/images/conversation_service.png)
 
-1. On the next page, click `Launch tool`.
+1. Click `Launch tool`.
 
-1. In the Watson Assistant page, navigate to `Workspace` tab.
+1. Go to the `Skills` tab.
 
-1. Click the `Import workspace` icon on the top of the Assistant workspaces. 
+1. Click `Create new`
 
-1. Specify the location of the workspace JSON file in your local copy of the app project:
+1. Select the `Import skill` tab.
 
-    `<project_root>/training/ITSM_workspace.json`
+1. Click `Choose JSON file`, go to your cloned repo dir, and `Open` file `training/ITSM_workspace.json` (in the project root folder).
 
-1. Select `Everything (Intents, Entities, and Dialog)` option and then click `Import`. 
+1. Select `Everything (Intents, Entities, and Dialog)`.
 
-1. The sample ITSM workspace is created.
+1. Click `Import`.
 
-## Setting up Discovery service
+To find the `WORKSPACE_ID` of the Watson Assistant:
+
+* Go back to the `Skills` tab.
+* Find the card for the workspace you would like to use. Look for `ITSM`.
+* Click on the three dots in the upper right-hand corner of the card and select `View API Details`.
+* Copy the `Workspace ID` GUID.
+
+!["Get Workspace ID"](https://github.com/IBM/pattern-utils/blob/master/watson-assistant/assistantPostSkillGetID.gif)
+
+* In the next step, you will put this `Workspace ID` into the `.env file as ``WORKSPACE_ID``.
+
+### Setting up Discovery service
 
 The Watson Discovery service is used to provide underline infrastructure in this code pattern when searching in knowledge base.
 
-### Creating a Discovery service
+#### Creating a Discovery service
 
-Watson Discovery service is to be setup to search in the knowledge base when the virtual agent is not trained to cover specific topics.
+Create an instance of [**Watson Discovery**](https://cloud.ibm.com/catalog/services/discovery).
 
-1. At the command line, go to the local project directory (`vaticketbot`).
-
-1. Connect to IBM Cloud with the Cloud Foundry command-line tool. 
-    ```bash
-    cf login
-    ```
-
-1. Create an instance of the Discovery service in IBM Cloud. For example:
-
-    ```bash
-    cf create-service discovery lite my-discovery-service
-    ```
-
-1. Check the status of Discovery service instance in IBM Cloud, if necessary
-
-    ```bash
-    cf services
-    ```
-
-### Creating a collection and ingesting documents into Discovery service
+#### Creating a collection and ingesting documents into Discovery service
 
 1. Download and unzip the [`knowledgebase.zip`](training/knowledgebase.zip) in this repo to reveal a set of JSON documents
 
@@ -153,7 +143,7 @@ Watson Discovery service is to be setup to search in the knowledge base when the
 
 1. Select three JSON files from local file system where you downloaded and unzipped `knowledgebase.zip` file. This may take a few seconds, you will see a notification when the process is finished
 
-## Setting up trial IBM Control Desk SaaS system
+### Setting up trial IBM Control Desk SaaS system
 
 If you don't have an available in-house Maximo/ICD system to integrate with Watson services in this code pattern, you may request a trial ICD SaaS system.
 
@@ -197,18 +187,6 @@ click `Launch` button to bring up ICD login screen. Note down the login page URL
     https://siwr35cdwsa-tr3.sccd.ibmserviceengage.com/maximo_t4hj/webclient/login/login.jsp?welcome=true
 
 Login to your trail ICD SaaS system and verify it's working.
-
-## Installing locally
-
-If you want to modify the app or use it as a basis for building your own app, install it locally. You can then deploy your modified version of the app to IBM Cloud.
-
-### Getting the files
-
-Use GitHub to clone the repository locally. In a terminal, run:
-
-   ```bash
-   git clone https://github.com/ibm/virtualhelpdesk
-   ```
 
 ### Configuring the Watson Assistant service environment
 
@@ -463,11 +441,11 @@ Perform tasks in this section if you have an `older` release of Maximo/ICD syste
 
 1. Point your browser to http://localhost:3000 to try out the app.
 
-## Running the use cases
+### Running the use cases
 
 When pointing your browser to http://localhost:3000, you are starting a Q/A session. 
 
-### Watson Assistant delivers
+#### Watson Assistant delivers
 
 You may type problem statements such as
 * my pc is running slow
@@ -479,7 +457,7 @@ The virtual agent will do its best to address the issue, for example
 
     ![Screen capture of workspace tile menu](doc/source/images/conversation_deliver.png)
 
-### Watson Discovery comes to rescue
+#### Watson Discovery comes to rescue
 
 When end users have any question/request that the virtual agent has not been trained to understand, it searches in the knowledge base through Watson Discovery service and presents relavant entries as suggestion(s) to the end users.
 
@@ -492,7 +470,7 @@ in the Q/A session, the virtual agent may return suggestion(s) depending on info
 
 If the entries from the knowledge base does not provide sufficient information, end users have option to open ticket.
 
-### Opening a ticket in Maximo/ICD system
+#### Opening a ticket in Maximo/ICD system
 
 As the last resort, the virtual agent can collect information and create a new ticket on your behalf. For example, if you ask
 
